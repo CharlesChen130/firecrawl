@@ -1,0 +1,65 @@
+services:
+  - name: api
+    type: web
+    env: node
+    build:
+      dockerfilePath: apps/api/Dockerfile
+    envVars:
+      - key: REDIS_URL
+        value: ${REDIS_URL:-redis://redis:6379}
+      - key: PLAYWRIGHT_MICROSERVICE_URL
+        value: ${PLAYWRIGHT_MICROSERVICE_URL:-http://playwright-service:3000/scrape}
+      - key: OPENAI_API_KEY
+        value: ${OPENAI_API_KEY}
+      # Add other environment variables here
+    ports:
+      - 3002
+    plan: free
+    dependsOn:
+      - redis
+      - playwright-service
+
+  - name: worker
+    type: worker
+    env: node
+    build:
+      dockerfilePath: apps/api/Dockerfile
+    envVars:
+      - key: REDIS_URL
+        value: ${REDIS_URL:-redis://redis:6379}
+      - key: PLAYWRIGHT_MICROSERVICE_URL
+        value: ${PLAYWRIGHT_MICROSERVICE_URL:-http://playwright-service:3000/scrape}
+      - key: OPENAI_API_KEY
+        value: ${OPENAI_API_KEY}
+      # Add other environment variables here
+    plan: free
+    dependsOn:
+      - redis
+      - playwright-service
+      - api
+
+  - name: redis
+    type: cache
+    env: redis
+    plan: free
+
+  - name: playwright-service
+    type: web
+    env: node
+    build:
+      dockerfilePath: apps/playwright-service-ts/Dockerfile
+    envVars:
+      - key: PORT
+        value: 3000
+      - key: PROXY_SERVER
+        value: ${PROXY_SERVER}
+      - key: PROXY_USERNAME
+        value: ${PROXY_USERNAME}
+      - key: PROXY_PASSWORD
+        value: ${PROXY_PASSWORD}
+      - key: BLOCK_MEDIA
+        value: ${BLOCK_MEDIA}
+      # Add other environment variables here
+    ports:
+      - 3000
+    plan: free
