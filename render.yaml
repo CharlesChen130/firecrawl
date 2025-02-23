@@ -1,0 +1,40 @@
+services:
+  - name: api
+    type: docker
+    dockerfile_path: apps/api/Dockerfile
+    build_context: .
+    env:
+      - key: REDIS_URL
+        value: redis://redis:6379
+      - key: PLAYWRIGHT_MICROSERVICE_URL
+        value: http://playwright-service:3000/scrape
+      # Add other environment variables here
+    plan: free
+    auto_deploy: true
+
+  - name: worker
+    type: docker
+    dockerfile_path: apps/api/Dockerfile
+    build_context: .
+    env:
+      - key: REDIS_URL
+        value: redis://redis:6379
+      - key: PLAYWRIGHT_MICROSERVICE_URL
+        value: http://playwright-service:3000/scrape
+      # Add other environment variables here
+    plan: free
+    auto_deploy: true
+
+  - name: redis
+    type: docker
+    dockerfile_path: Dockerfile.redis
+    build_context: .
+    plan: free
+    auto_deploy: true
+
+  - name: playwright-service
+    type: docker
+    dockerfile_path: apps/playwright-service-ts/Dockerfile
+    build_context: .
+    plan: free
+    auto_deploy: true
