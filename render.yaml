@@ -1,40 +1,159 @@
+# render.yaml
+
 services:
   - name: api
-    type: docker
-    dockerfile_path: apps/api/Dockerfile
-    build_context: .
-    env:
+    type: web
+    env: docker
+    plan: standard
+    buildCommand: cd apps/api && docker build -t api .
+    startCommand: pnpm run start:production
+    envVars:
       - key: REDIS_URL
-        value: redis://redis:6379
+        value: ${REDIS_URL}
+      - key: REDIS_RATE_LIMIT_URL
+        value: ${REDIS_RATE_LIMIT_URL}
       - key: PLAYWRIGHT_MICROSERVICE_URL
-        value: http://playwright-service:3000/scrape
-      # Add other environment variables here
-    plan: free
-    auto_deploy: true
+        value: ${PLAYWRIGHT_MICROSERVICE_URL}
+      - key: USE_DB_AUTHENTICATION
+        value: ${USE_DB_AUTHENTICATION}
+      - key: OPENAI_API_KEY
+        value: ${OPENAI_API_KEY}
+      - key: OPENAI_BASE_URL
+        value: ${OPENAI_BASE_URL}
+      - key: MODEL_NAME
+        value: ${MODEL_NAME}
+      - key: SLACK_WEBHOOK_URL
+        value: ${SLACK_WEBHOOK_URL}
+      - key: BULL_AUTH_KEY
+        value: ${BULL_AUTH_KEY}
+      - key: TEST_API_KEY
+        value: ${TEST_API_KEY}
+      - key: POSTHOG_API_KEY
+        value: ${POSTHOG_API_KEY}
+      - key: POSTHOG_HOST
+        value: ${POSTHOG_HOST}
+      - key: SUPABASE_ANON_TOKEN
+        value: ${SUPABASE_ANON_TOKEN}
+      - key: SUPABASE_URL
+        value: ${SUPABASE_URL}
+      - key: SUPABASE_SERVICE_TOKEN
+        value: ${SUPABASE_SERVICE_TOKEN}
+      - key: SCRAPING_BEE_API_KEY
+        value: ${SCRAPING_BEE_API_KEY}
+      - key: SELF_HOSTED_WEBHOOK_URL
+        value: ${SELF_HOSTED_WEBHOOK_URL}
+      - key: SERPER_API_KEY
+        value: ${SERPER_API_KEY}
+      - key: SEARCHAPI_API_KEY
+        value: ${SEARCHAPI_API_KEY}
+      - key: LOGGING_LEVEL
+        value: ${LOGGING_LEVEL}
+      - key: PROXY_SERVER
+        value: ${PROXY_SERVER}
+      - key: PROXY_USERNAME
+        value: ${PROXY_USERNAME}
+      - key: PROXY_PASSWORD
+        value: ${PROXY_PASSWORD}
+      - key: HOST
+        value: ${HOST:-0.0.0.0}
+      - key: PORT
+        value: ${INTERNAL_PORT:-3002}
+      - key: FLY_PROCESS_GROUP
+        value: app
+    dockerfilePath: apps/api/Dockerfile
+    healthCheckPath: /
+    autoDeploy: true
+    instances: 1
+    ports:
+      - port: 3002
+        protocol: tcp
 
   - name: worker
-    type: docker
-    dockerfile_path: apps/api/Dockerfile
-    build_context: .
-    env:
+    type: worker
+    env: docker
+    plan: standard
+    buildCommand: cd apps/api && docker build -t worker .
+    startCommand: pnpm run workers
+    envVars:
       - key: REDIS_URL
-        value: redis://redis:6379
+        value: ${REDIS_URL}
+      - key: REDIS_RATE_LIMIT_URL
+        value: ${REDIS_RATE_LIMIT_URL}
       - key: PLAYWRIGHT_MICROSERVICE_URL
-        value: http://playwright-service:3000/scrape
-      # Add other environment variables here
-    plan: free
-    auto_deploy: true
-
-  - name: redis
-    type: docker
-    dockerfile_path: Dockerfile.redis
-    build_context: .
-    plan: free
-    auto_deploy: true
+        value: ${PLAYWRIGHT_MICROSERVICE_URL}
+      - key: USE_DB_AUTHENTICATION
+        value: ${USE_DB_AUTHENTICATION}
+      - key: OPENAI_API_KEY
+        value: ${OPENAI_API_KEY}
+      - key: OPENAI_BASE_URL
+        value: ${OPENAI_BASE_URL}
+      - key: MODEL_NAME
+        value: ${MODEL_NAME}
+      - key: SLACK_WEBHOOK_URL
+        value: ${SLACK_WEBHOOK_URL}
+      - key: BULL_AUTH_KEY
+        value: ${BULL_AUTH_KEY}
+      - key: TEST_API_KEY
+        value: ${TEST_API_KEY}
+      - key: POSTHOG_API_KEY
+        value: ${POSTHOG_API_KEY}
+      - key: POSTHOG_HOST
+        value: ${POSTHOG_HOST}
+      - key: SUPABASE_ANON_TOKEN
+        value: ${SUPABASE_ANON_TOKEN}
+      - key: SUPABASE_URL
+        value: ${SUPABASE_URL}
+      - key: SUPABASE_SERVICE_TOKEN
+        value: ${SUPABASE_SERVICE_TOKEN}
+      - key: SCRAPING_BEE_API_KEY
+        value: ${SCRAPING_BEE_API_KEY}
+      - key: SELF_HOSTED_WEBHOOK_URL
+        value: ${SELF_HOSTED_WEBHOOK_URL}
+      - key: SERPER_API_KEY
+        value: ${SERPER_API_KEY}
+      - key: SEARCHAPI_API_KEY
+        value: ${SEARCHAPI_API_KEY}
+      - key: LOGGING_LEVEL
+        value: ${LOGGING_LEVEL}
+      - key: PROXY_SERVER
+        value: ${PROXY_SERVER}
+      - key: PROXY_USERNAME
+        value: ${PROXY_USERNAME}
+      - key: PROXY_PASSWORD
+        value: ${PROXY_PASSWORD}
+      - key: FLY_PROCESS_GROUP
+        value: worker
+    dockerfilePath: apps/api/Dockerfile
+    autoDeploy: true
+    instances: 1
 
   - name: playwright-service
-    type: docker
-    dockerfile_path: apps/playwright-service-ts/Dockerfile
-    build_context: .
-    plan: free
-    auto_deploy: true
+    type: web
+    env: docker
+    plan: standard
+    buildCommand: cd apps/playwright-service-ts && docker build -t playwright-service .
+    startCommand: node server.js
+    envVars:
+      - key: PORT
+        value: "3000"
+      - key: PROXY_SERVER
+        value: ${PROXY_SERVER}
+      - key: PROXY_USERNAME
+        value: ${PROXY_USERNAME}
+      - key: PROXY_PASSWORD
+        value: ${PROXY_PASSWORD}
+      - key: BLOCK_MEDIA
+        value: ${BLOCK_MEDIA}
+    dockerfilePath: apps/playwright-service-ts/Dockerfile
+    healthCheckPath: /
+    autoDeploy: true
+    instances: 1
+    ports:
+      - port: 3000
+        protocol: tcp
+
+databases:
+  - name: redis
+    type: redis
+    plan: standard
+    version: 6
